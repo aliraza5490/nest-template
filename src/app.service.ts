@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { JWTPayload } from './common/types';
 
 @Injectable()
 export class AppService {
