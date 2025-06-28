@@ -1,10 +1,4 @@
-import * as moduleAlias from 'module-alias';
-moduleAlias.addAliases({
-  '@': __dirname + '/src',
-});
-moduleAlias();
-
-import { BadRequestException, ValidationPipe } from '@nestjs/common';
+import { BadRequestException, Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -17,6 +11,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
 
+  const logger = new Logger('Main');
   app.enableCors({
     origin: (origin, callback) => {
       const allowedOrigin = configService.get<string>('FRONTEND_URL');
@@ -24,6 +19,7 @@ async function bootstrap() {
         return callback(null, true);
       }
       if (allowedOrigin.indexOf(origin) === -1) {
+        logger.warn(`CORS request from disallowed origin: ${origin}`);
         return callback(new BadRequestException('Not allowed by CORS'));
       }
       return callback(null, true);
@@ -55,6 +51,9 @@ async function bootstrap() {
   SwaggerModule.setup('docs', app, documentFactory);
 
   await app.listen(process.env.PORT ?? 3000);
+  logger.log(
+    `Application is running on: http://localhost:${process.env.PORT ?? 3000}/docs`,
+  );
 }
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 bootstrap();
