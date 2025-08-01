@@ -1,67 +1,132 @@
+import { comparePassword, generatePasswordHash } from "@/shared/utils/bcrypt";
+import { MailService } from "@/shared/mail/mail.service";
+import { UserService } from "./user.service";
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { compareSync, hashSync } from 'bcryptjs';
-import { Repository } from 'typeorm';
-import { LoginDTO } from './dto/login.dto';
-import { RegisterDTO } from './dto/register.dto';
-import { User } from './entities/user.entity';
+} from "@nestjs/common";
+import {
+  EmailVerificationInput,
+  LoginInput,
+  RegistrationInput,
+  RequestResetPasswordInput,
+  ResetPasswordInput,
+  ValidateEmailInput,
+  VerifyEmailInput,
+} from "./dto/auth.dto";
+import { TokenService } from "./token.service";
 
 @Injectable()
 export class AuthService {
   constructor(
-    private jwtService: JwtService,
-    private configService: ConfigService,
-    @InjectRepository(User) private usersRepository: Repository<User>,
+    private readonly userService: UserService,
+    private readonly tokenService: TokenService,
+    private readonly mailService: MailService,
   ) {}
 
-  async login(loginDTO: LoginDTO) {
-    const user = await this.usersRepository.findOne({
-      where: { email: loginDTO.email },
+  async register(input: RegistrationInput) {
+    const userExist = await this.userService.findByEmail(input.email);
+    if (userExist && userExist.isEmailVerified) {
+      throw new ConflictException("Email already in use");
+    }
+
+    if (!userExist?.isEmailVerified) {
+      await this.userService.deleteUserByFilters({ email: input.email });
+    }
+
+    const user = await this.userService.createUser(input);
+    const emailVerificationToken =
+      await this.tokenService.signEmailVerificationToken(user.email);
+    await this.mailService.sendVerificationMail({
+      email: user.email,
+      firstName: user.firstName,
+      token: emailVerificationToken,
     });
-    if (!user) {
-      throw new UnauthorizedException();
-    }
-
-    const isPasswordValid = compareSync(loginDTO.password, user.password);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException();
-    }
-
-    const token = this.jwtService.sign(
-      { id: user.id, role: user.role },
-      {
-        secret: this.configService.get('JWT_SECRET'),
-        expiresIn: loginDTO.rememberMe ? '7d' : '1d',
-      },
-    );
-
-    return {
-      token,
-    };
   }
 
-  async register(registerDTO: RegisterDTO) {
-    const userExists = await this.usersRepository.exists({
-      where: { email: registerDTO.email },
-    });
-
-    if (userExists) {
-      throw new ConflictException('User already exists');
+  async login(input: LoginInput) {
+    const user = await this.userService.findByEmail(input.email);
+    if (!user) {
+      throw new UnauthorizedException("Invalid Credentials");
     }
 
-    registerDTO.password = hashSync(registerDTO.password, 10);
+    if (!user.isEmailVerified) {
+      throw new ForbiddenException("Email not verified");
+    }
 
-    await this.usersRepository.save(registerDTO);
+    if (!comparePassword(user.password, input.password)) {
+      throw new UnauthorizedException("Invalid Credentials");
+    }
 
-    return {
-      message: 'User registered successfully',
-    };
+    const tokens = await this.tokenService.signAuthTokens(
+      user,
+      input.rememberMe,
+    );
+
+    // @ts-expect-error - To remove password from the response
+    delete user.password;
+    return { ...tokens, user };
+  }
+
+  async requestResetPassword(input: RequestResetPasswordInput) {
+    const user = await this.userService.getByEmail(input.email);
+
+    const token = await this.tokenService.signResetPasswordToken(input.email);
+    await this.mailService.sendResetPasswordMail({
+      email: input.email,
+      firstName: user.firstName,
+      token,
+    });
+  }
+
+  async resetPassword(input: ResetPasswordInput) {
+    const email = await this.tokenService.verifyResetPasswordToken(input.token);
+    const user = await this.userService.getByEmail(email);
+
+    user.password = generatePasswordHash(input.password);
+    await user.save();
+
+    await this.mailService.sendResetPasswordSuccessMail({
+      email,
+      firstName: user.firstName,
+    });
+  }
+
+  async validateEmail(input: ValidateEmailInput) {
+    const user = await this.userService.findByEmail(input.email);
+
+    return { exist: !!user };
+  }
+
+  async verifyEmail(input: VerifyEmailInput) {
+    const email = await this.tokenService.verifyEmailVerificationToken(
+      input.token,
+    );
+    await this.userService.updateUserByFilters(
+      { email },
+      { isEmailVerified: true },
+    );
+
+    return { message: "Congratulation, your email verified successfully" };
+  }
+
+  async sendEmailVerification(input: EmailVerificationInput) {
+    const user = await this.userService.getByEmail(input.email);
+    if (user.isEmailVerified) {
+      throw new BadRequestException("Email already verified");
+    }
+
+    const token = await this.tokenService.signEmailVerificationToken(
+      user.email,
+    );
+
+    await this.mailService.sendVerificationMail({
+      email: user.email,
+      firstName: user.firstName,
+      token,
+    });
   }
 }

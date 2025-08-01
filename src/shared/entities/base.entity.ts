@@ -1,15 +1,14 @@
 import {
+  BaseEntity,
   CreateDateColumn,
   DeleteDateColumn,
-  Entity,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
-} from 'typeorm';
+} from "typeorm";
 
-@Entity()
-class BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
+export class EntityBase extends BaseEntity {
+  @PrimaryGeneratedColumn("uuid", { name: "ID" })
+  ID: string;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -20,5 +19,3 @@ class BaseEntity {
   @DeleteDateColumn()
   deletedAt: Date;
 }
-
-export default BaseEntity;

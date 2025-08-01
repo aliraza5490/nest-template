@@ -1,25 +1,26 @@
-import BaseEntity from '@/src/common/entities/BaseEntity';
-import { UserRole } from '@/src/common/types';
-import { Column, Entity } from 'typeorm';
+import { EntityBase } from "@/shared/entities/base.entity";
+import { generatePasswordHash } from "@/shared/utils/bcrypt";
+import { BeforeInsert, Column, Entity } from "typeorm";
 
 @Entity()
-export class User extends BaseEntity {
-  @Column({ type: 'varchar', length: 100 })
+export class User extends EntityBase {
+  @Column({ type: "varchar" })
   firstName: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: "varchar" })
   lastName: string;
 
-  @Column({ type: 'varchar', length: 100, unique: true })
+  @Column({ type: "varchar", unique: true })
   email: string;
 
-  @Column({ type: 'varchar', length: 100 })
+  @Column({ type: "varchar" })
   password: string;
 
-  @Column({
-    type: 'enum',
-    enum: UserRole,
-    default: UserRole.USER,
-  })
-  role: UserRole;
+  @Column({ type: "boolean", default: false })
+  isEmailVerified: boolean;
+
+  @BeforeInsert()
+  beforeInsert() {
+    this.password = generatePasswordHash(this.password);
+  }
 }

@@ -1,51 +1,60 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
-import { Public } from './decorators/public.decorator';
-import { LoginDTO } from './dto/login.dto';
-import { RegisterDTO } from './dto/register.dto';
+import { Body, Controller, Get, Post, Query } from "@nestjs/common";
+import { AuthService } from "./auth.service";
+import {
+  EmailVerificationInput,
+  LoginInput,
+  RegistrationInput,
+  RequestResetPasswordInput,
+  ResetPasswordInput,
+  ValidateEmailInput,
+  VerifyEmailInput,
+} from "./dto/auth.dto";
+import { Public } from "./decorators/public.decorator";
 
+@Controller("auth")
 @Public()
-@Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Login' })
-  @ApiResponse({
-    status: 200,
-    description: 'Login successful',
-    schema: {
-      type: 'object',
-      properties: {
-        token: {
-          type: 'string',
-          example: 'eyJhbGciOi',
-        },
-      },
-    },
-  })
-  @HttpCode(200)
-  @Post('/login')
-  login(@Body() loginDTO: LoginDTO) {
-    return this.authService.login(loginDTO);
+  @Post("register")
+  async register(@Body() input: RegistrationInput) {
+    await this.authService.register(input);
+
+    return { message: "Check your mailbox to verify email" };
   }
 
-  @ApiOperation({ summary: 'Register' })
-  @ApiResponse({
-    status: 201,
-    description: 'Registration successful',
-    schema: {
-      type: 'object',
-      properties: {
-        message: {
-          type: 'string',
-          example: 'User registered successfully',
-        },
-      },
-    },
-  })
-  @Post('/register')
-  register(@Body() registerDTO: RegisterDTO) {
-    return this.authService.register(registerDTO);
+  @Post("login")
+  async login(@Body() loginDto: LoginInput) {
+    return this.authService.login(loginDto);
+  }
+
+  @Get("request-reset-password")
+  async requestResetPassword(@Query() input: RequestResetPasswordInput) {
+    await this.authService.requestResetPassword(input);
+
+    return { message: "Check your mailbox" };
+  }
+
+  @Post("reset-password")
+  async resetPassword(@Body() input: ResetPasswordInput) {
+    await this.authService.resetPassword(input);
+    return { message: "Password reset successfully" };
+  }
+
+  @Get("validate-email")
+  async validateEmail(@Query() input: ValidateEmailInput) {
+    return this.authService.validateEmail(input);
+  }
+
+  @Get("verify-email")
+  async verifyEmail(@Query() input: VerifyEmailInput) {
+    return this.authService.verifyEmail(input);
+  }
+
+  @Get("send-email-verification")
+  async sendEmailVerification(@Query() input: EmailVerificationInput) {
+    await this.authService.sendEmailVerification(input);
+
+    return { message: "Check your mailbox to verify email" };
   }
 }

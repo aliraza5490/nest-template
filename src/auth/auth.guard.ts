@@ -4,12 +4,12 @@ import {
   ForbiddenException,
   Injectable,
   UnauthorizedException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Reflector } from '@nestjs/core';
-import { JwtService } from '@nestjs/jwt';
-import { Request } from 'express';
-import { JWTPayload } from '../common/types';
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { Reflector } from "@nestjs/core";
+import { JwtService } from "@nestjs/jwt";
+import { Request } from "express";
+import { JWTPayload } from "../shared/types";
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -20,7 +20,7 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+    const isPublic = this.reflector.getAllAndOverride<boolean>("isPublic", [
       context.getHandler(),
       context.getClass(),
     ]);
@@ -36,14 +36,14 @@ export class AuthGuard implements CanActivate {
 
     try {
       const payload: JWTPayload = await this.jwtService.verifyAsync(token, {
-        secret: this.configService.get('JWT_SECRET'),
+        secret: this.configService.get("JWT_SECRET"),
       });
 
       // 💡 We're assigning the payload to the request object here
       // so that we can access it in our route handlers
-      request['user'] = payload;
+      request["user"] = payload;
 
-      const roles: string[] = this.reflector.getAllAndOverride('roles', [
+      const roles: string[] = this.reflector.getAllAndOverride("roles", [
         context.getHandler(),
         context.getClass(),
       ]);
@@ -53,7 +53,7 @@ export class AuthGuard implements CanActivate {
 
       const hasRole = !!payload?.role && roles.includes(payload.role);
       if (!payload?.role || !hasRole) {
-        throw new ForbiddenException('You do not have permission (Roles)');
+        throw new ForbiddenException("You do not have permission (Roles)");
       }
       return true;
     } catch {
@@ -62,7 +62,7 @@ export class AuthGuard implements CanActivate {
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+    const [type, token] = request.headers.authorization?.split(" ") ?? [];
+    return type === "Bearer" ? token : undefined;
   }
 }
