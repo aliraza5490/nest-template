@@ -22,11 +22,7 @@ export const PGVectorStoreProvider: Provider = {
     const config = {
       postgresConnectionOptions: {
         type: "postgres",
-        host: configService.get<string>("DB_HOST"),
-        port: configService.get<number>("DB_PORT"),
-        user: configService.get<string>("DB_USERNAME"),
-        password: configService.get<string>("DB_PASSWORD"),
-        database: configService.get<string>("DB_NAME"),
+        connectionString: configService.get<string>("PG_CONNECTION_STRING"),
       } as PoolConfig,
       tableName: "scraping_vector_store",
       columns: {
