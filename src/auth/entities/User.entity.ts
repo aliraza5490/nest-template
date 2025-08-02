@@ -20,7 +20,7 @@ export class User extends EntityBase {
   isEmailVerified: boolean;
 
   @BeforeInsert()
-  beforeInsert() {
-    this.password = generatePasswordHash(this.password);
+  async beforeInsert() {
+    this.password = await generatePasswordHash(this.password);
   }
 }

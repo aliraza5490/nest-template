@@ -6,6 +6,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
   UnauthorizedException,
 } from "@nestjs/common";
 import {
@@ -21,15 +22,37 @@ import { TokenService } from "./token.service";
 import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "./entities/User.entity";
 import { Repository } from "typeorm";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
   constructor(
     private readonly tokenService: TokenService,
     private readonly mailService: MailService,
+    private readonly configService: ConfigService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
+
+  async onModuleInit() {
+    const isExisting = await this.userRepository.findOne({
+      where: { email: this.configService.get("SUPER_USER_EMAIL") },
+    });
+    if (!isExisting) {
+      const adminUser = this.userRepository.create({
+        email: this.configService.get("SUPER_USER_EMAIL"),
+        password: this.configService.get("SUPER_USER_PASSWORD") as string,
+        firstName: "SUPER",
+        lastName: "ADMIN",
+        isEmailVerified: true,
+      });
+      await this.userRepository.save(adminUser);
+      console.log("Admin user created");
+    } else {
+      console.log("Admin user already exists");
+    }
+    console.log("AuthService initialized");
+  }
 
   async register(input: RegistrationInput) {
     const userExist = await this.userRepository.findOne({
@@ -45,7 +68,7 @@ export class AuthService {
 
     const user = this.userRepository.create({
       email: input.email,
-      password: generatePasswordHash(input.password),
+      password: input.password,
       firstName: input.firstName,
       lastName: input.lastName,
     });
@@ -74,7 +97,7 @@ export class AuthService {
 
     const { password, ...userWithoutPassword } = user;
 
-    if (!comparePassword(password, input.password)) {
+    if (!(await comparePassword(password, input.password))) {
       throw new UnauthorizedException("Invalid Credentials");
     }
 
@@ -111,7 +134,7 @@ export class AuthService {
       throw new NotFoundException("User not found");
     }
 
-    user.password = generatePasswordHash(input.password);
+    user.password = await generatePasswordHash(input.password);
     await this.userRepository.save(user);
 
     await this.mailService.sendResetPasswordSuccessMail({

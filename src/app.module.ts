@@ -8,11 +8,13 @@ import { AppService } from "./app.service";
 import { AuthGuard } from "@/auth/guards/auth.guard";
 import { AuthModule } from "./auth/auth.module";
 import { SharedModule } from "./shared/shared.module";
+import { validate } from "./config";
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      validate: validate,
     }),
     JwtModule.register({}),
     TypeOrmModule.forRootAsync({
