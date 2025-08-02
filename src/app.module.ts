@@ -7,6 +7,7 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { AuthGuard } from "@/auth/guards/auth.guard";
 import { AuthModule } from "./auth/auth.module";
+import { SharedModule } from "./shared/shared.module";
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AuthModule } from "./auth/auth.module";
       inject: [ConfigService],
     }),
     AuthModule,
+    SharedModule,
   ],
   controllers: [AppController],
   providers: [
