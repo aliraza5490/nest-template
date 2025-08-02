@@ -1,5 +1,5 @@
 import { InvalidTokenException } from "@/shared/exceptions";
-import { User } from "./entities/user.entity";
+import { User } from "./entities/User.entity";
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";

@@ -19,7 +19,7 @@ import {
 } from "./dto/auth.dto";
 import { TokenService } from "./token.service";
 import { InjectRepository } from "@nestjs/typeorm";
-import { User } from "./entities/user.entity";
+import { User } from "./entities/User.entity";
 import { Repository } from "typeorm";
 
 @Injectable()

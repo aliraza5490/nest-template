@@ -6,7 +6,8 @@ import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { AuthToken } from "./entities/AuthToken.entity";
 import { TokenService } from "./token.service";
-import { User } from "./entities/user.entity";
+import { User } from "./entities/User.entity";
+import { AuthTokenSubscriber } from "./subscribers/AuthToken.subscriber";
 
 @Module({
   imports: [
@@ -21,6 +22,6 @@ import { User } from "./entities/user.entity";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, TokenService],
+  providers: [AuthService, TokenService, AuthTokenSubscriber],
 })
 export class AuthModule {}

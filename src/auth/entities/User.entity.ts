@@ -1,4 +1,4 @@
-import { EntityBase } from "@/shared/entities/base.entity";
+import { EntityBase } from "@/shared/entities/Base.entity";
 import { generatePasswordHash } from "@/shared/utils/bcrypt";
 import { BeforeInsert, Column, Entity } from "typeorm";
 
