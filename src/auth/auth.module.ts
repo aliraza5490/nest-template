@@ -6,7 +6,6 @@ import { AuthController } from "./auth.controller";
 import { AuthService } from "./auth.service";
 import { AuthToken } from "./entities/AuthToken.entity";
 import { TokenService } from "./token.service";
-import { UserService } from "./user.service";
 import { MailService } from "@/shared/mail/mail.service";
 import { User } from "./entities/user.entity";
 
@@ -23,6 +22,6 @@ import { User } from "./entities/user.entity";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, TokenService, UserService, MailService],
+  providers: [AuthService, TokenService, MailService],
 })
 export class AuthModule {}

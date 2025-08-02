@@ -1,7 +1,6 @@
 import { InvalidTokenException } from "@/shared/exceptions";
 import { User } from "./entities/user.entity";
-import { UserService } from "./user.service";
-import { Injectable } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { InjectRepository } from "@nestjs/typeorm";
@@ -14,7 +13,8 @@ export class TokenService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly userService: UserService,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
     @InjectRepository(AuthToken)
     private readonly authTokenRepository: Repository<AuthToken>,
   ) {}
@@ -77,7 +77,13 @@ export class TokenService {
         throw new InvalidTokenException("Invalid refresh token");
       }
 
-      const user = await this.userService.getById(decoded.ID);
+      const user = await this.userRepository.findOne({
+        where: { ID: decoded.ID },
+      });
+
+      if (!user) {
+        throw new NotFoundException("User not found");
+      }
 
       return {
         accessToken: this.signAccessToken(user),
