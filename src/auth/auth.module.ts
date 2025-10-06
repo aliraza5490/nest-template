@@ -8,10 +8,12 @@ import { AuthToken } from "./entities/AuthToken.entity";
 import { TokenService } from "./token.service";
 import { User } from "./entities/User.entity";
 import { AuthTokenSubscriber } from "./subscribers/AuthToken.subscriber";
+import { AuthLogService } from "./AuthLog.service";
+import LoginLog from "./entities/LoginLog.entity";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AuthToken, User]),
+    TypeOrmModule.forFeature([AuthToken, User, LoginLog]),
     JwtModule.registerAsync({
       imports: [],
       useFactory: async (configService: ConfigService) => ({
@@ -22,6 +24,6 @@ import { AuthTokenSubscriber } from "./subscribers/AuthToken.subscriber";
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, TokenService, AuthTokenSubscriber],
+  providers: [AuthService, TokenService, AuthTokenSubscriber, AuthLogService],
 })
 export class AuthModule {}

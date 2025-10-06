@@ -1,8 +1,8 @@
-import { EntityBase } from "@/shared/entities/Base.entity";
+import { AppEntity } from "@/shared/entities/App.entity";
 import { Column, Entity } from "typeorm";
 
 @Entity()
-export class AuthToken extends EntityBase {
+export class AuthToken extends AppEntity {
   @Column()
   type: string;
 

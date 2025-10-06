@@ -23,6 +23,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { User } from "./entities/User.entity";
 import { Repository } from "typeorm";
 import { ConfigService } from "@nestjs/config";
+import { AuthLogService } from "./AuthLog.service";
 
 @Injectable()
 export class AuthService implements OnModuleInit {
@@ -30,6 +31,7 @@ export class AuthService implements OnModuleInit {
     private readonly tokenService: TokenService,
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
+    private readonly logService: AuthLogService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
   ) {}
@@ -83,23 +85,37 @@ export class AuthService implements OnModuleInit {
     });
   }
 
-  async login(input: LoginInput) {
+  async login(input: LoginInput, ip: string) {
+    const loginLog = await this.logService.findOneByIP(ip);
+
+    if (loginLog && loginLog.blockedUntil > new Date()) {
+      throw new ForbiddenException(
+        `Too many failed login attempts. Try again after ${loginLog.blockedUntil.toISOString()}`,
+      );
+    }
+
     const user = await this.userRepository.findOne({
       where: { email: input.email },
     });
+
     if (!user) {
+      await this.logService.create(ip, loginLog);
       throw new UnauthorizedException("Invalid Credentials");
     }
 
     if (!user.isEmailVerified) {
+      await this.logService.create(ip, loginLog);
       throw new ForbiddenException("Email not verified");
     }
 
     const { password, ...userWithoutPassword } = user;
 
     if (!(await comparePassword(password, input.password))) {
+      await this.logService.create(ip, loginLog);
       throw new UnauthorizedException("Invalid Credentials");
     }
+
+    await this.logService.resetByIP(ip, loginLog);
 
     const tokens = await this.tokenService.signAuthTokens(
       user,

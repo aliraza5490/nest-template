@@ -1,9 +1,9 @@
-import { EntityBase } from "@/shared/entities/Base.entity";
+import { AppEntity } from "@/shared/entities/App.entity";
 import { generatePasswordHash } from "@/shared/utils/bcrypt";
 import { BeforeInsert, Column, Entity } from "typeorm";
 
 @Entity()
-export class User extends EntityBase {
+export class User extends AppEntity {
   @Column({ type: "varchar" })
   firstName: string;
 

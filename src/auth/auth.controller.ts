@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Query } from "@nestjs/common";
+import { Body, Controller, Get, Ip, Post, Query } from "@nestjs/common";
 import { AuthService } from "./auth.service";
 import {
   EmailVerificationInput,
@@ -24,8 +24,8 @@ export class AuthController {
   }
 
   @Post("login")
-  async login(@Body() loginDto: LoginInput) {
-    return this.authService.login(loginDto);
+  async login(@Body() loginDto: LoginInput, @Ip() ip: string) {
+    return this.authService.login(loginDto, ip);
   }
 
   @Get("request-reset-password")
